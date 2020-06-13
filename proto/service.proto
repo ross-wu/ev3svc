@@ -1,0 +1,83 @@
+syntax = "proto3";
+
+import "google/rpc/code.proto";
+
+package ev3proto;
+
+option go_package = "github.com/ross-wu/ev3svc/proto;ev3proto";
+
+enum Port {
+  UNKNOWN = 0;
+  IN_1 = 1;
+  IN_2 = 2;
+  IN_3 = 3;
+  IN_4 = 4;
+  OUT_A = 5;
+  OUT_B = 6;
+  OUT_C = 7;
+  OUT_D = 8;
+}
+
+message InitRequest {
+  enum DeviceType {
+    UNKNOWN_DEVICE = 0;
+    TACHO_MOTOR = 1;
+  }
+  DeviceType device = 1;
+  Port port = 2;
+  string driver = 3;
+}
+
+message InitResponse {
+  google.rpc.Code error = 1;
+  string msg = 2;  // Error message if error != OK.
+}
+
+message Request {
+  enum Attribute {
+    INIT = 0;
+
+    ADDRESS = 1;
+    COMMANDS = 2;
+    COMMAND = 3;
+    POSITION = 4;
+    POSITION_SP = 5;
+    MAX_SPEED = 6;
+    SPEED = 7;
+    SPEED_SP = 8;
+    STOP_ACTIONS = 9;
+    STOP_ACTION = 10;
+    SET_STOP_ACTION = 11;
+
+    WAIT_FOR_POSITION = 100;
+  }
+  message Op {
+    Port port = 1;
+    Attribute attr = 2;
+    oneof value {
+      int32 int = 3;
+      string str = 4;
+      int64 duration = 5;  // time.Duration
+    }
+  }
+  repeated Op ops = 1;
+}
+
+message Response {
+  message Result {
+    google.rpc.Code error = 1;
+    string msg = 2;  // If error != OK, msg contains the error message.
+    oneof value {
+      int32 int = 3;
+      string str = 4;
+      int64 duration = 5;  // time.Duration
+    }
+    repeated string list = 6;
+  }
+  repeated Result results = 1;
+}
+
+service Ev3 {
+  rpc Init(InitRequest) returns (InitResponse) {}
+  rpc Exec(Request) returns (Response) {}
+}
